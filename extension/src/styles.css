@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+
+@theme {
+  --color-impact-low: #16a34a;
+  --color-impact-mid: #d97706;
+  --color-impact-high: #dc2626;
+}
