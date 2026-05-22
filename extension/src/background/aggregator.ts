@@ -5,6 +5,7 @@ import type {
   DomainImpact,
   DomainUsage,
   ImpactTotals,
+  SessionImpactResponse,
   SiteImpactResponse,
   TimeRange,
   TotalsResponse,
@@ -98,6 +99,26 @@ export async function buildSiteImpact(domain: string): Promise<SiteImpactRespons
     todayKwh: impact.kwh,
     todayLitersWater: impact.litersWater,
     todayGco2: impact.gco2,
+    confidence: profile.confidence,
+  };
+}
+
+/** Impact for the current site over the current session, from live usage the
+ *  content script measured (active seconds + bytes on this page). */
+export async function buildSessionImpact(
+  domain: string,
+  activeSeconds: number,
+  bytes: number,
+): Promise<SessionImpactResponse> {
+  const { gridRegion } = await getSettings();
+  const profile = await resolveProfile(domain, { enqueueIfMissing: true });
+  const impact = computeImpact(profile, { domain, activeSeconds, bytes, visitCount: 1 }, gridRegion);
+  return {
+    domain,
+    category: profile.category,
+    kwh: impact.kwh,
+    litersWater: impact.litersWater,
+    gco2: impact.gco2,
     confidence: profile.confidence,
   };
 }

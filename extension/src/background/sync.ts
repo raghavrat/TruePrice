@@ -1,5 +1,4 @@
 import { getSettings, getUsage, setLastSyncHour } from '../lib/storage';
-import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import { dayKeyFromEpochHour, epochHour } from '../lib/timeBuckets';
 import type { Category, ImpactTotals } from '../lib/types';
 import { computeImpact } from './calculator';
@@ -18,10 +17,13 @@ function bump(map: DayCategoryMap, day: string, category: Category, impact: Impa
 
 /** Push per-day per-category aggregates to Supabase when signed in + opted in. */
 export async function runSync(): Promise<void> {
-  if (!isSupabaseConfigured || !supabase) return;
-
   const settings = await getSettings();
   if (!settings.syncEnabled) return;
+
+  // Lazy-load Supabase so its client never initializes at service-worker
+  // startup — keeps the SW lean and immune to any auth-init issues.
+  const { supabase, isSupabaseConfigured } = await import('../lib/supabase');
+  if (!isSupabaseConfigured || !supabase) return;
 
   const {
     data: { user },

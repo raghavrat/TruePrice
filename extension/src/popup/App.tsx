@@ -10,25 +10,44 @@ const METHODOLOGY_URL =
   (import.meta.env.VITE_API_BASE_URL as string | undefined ?? 'http://localhost:3000') +
   '/methodology';
 
+type Status = 'loading' | 'ready' | 'error';
+
 export default function App() {
   const [range, setRange] = useState<TimeRange>('day');
   const [data, setData] = useState<TotalsResponse | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [status, setStatus] = useState<Status>('loading');
 
   useEffect(() => {
     let active = true;
-    setLoading(true);
+    setStatus('loading');
+
+    // Guard against the service worker never replying (e.g. it failed to load),
+    // so the popup shows an error instead of spinning forever.
+    const timeout = setTimeout(() => {
+      if (active) setStatus('error');
+    }, 4000);
+
     chrome.runtime
       .sendMessage({ type: 'GET_TOTALS', range })
-      .then((res: TotalsResponse) => {
-        if (active) {
+      .then((res: TotalsResponse | undefined) => {
+        if (!active) return;
+        clearTimeout(timeout);
+        if (res) {
           setData(res);
-          setLoading(false);
+          setStatus('ready');
+        } else {
+          setStatus('error');
         }
       })
-      .catch(() => active && setLoading(false));
+      .catch(() => {
+        if (!active) return;
+        clearTimeout(timeout);
+        setStatus('error');
+      });
+
     return () => {
       active = false;
+      clearTimeout(timeout);
     };
   }, [range]);
 
@@ -46,9 +65,21 @@ export default function App() {
 
       <p className="mt-3 mb-2 text-xs font-medium text-gray-500">{RANGE_LABELS[range]}</p>
 
-      {loading || !data ? (
+      {status === 'loading' && (
         <div className="py-10 text-center text-xs text-gray-400">Loading…</div>
-      ) : (
+      )}
+
+      {status === 'error' && (
+        <div className="py-8 text-center text-xs text-gray-500">
+          <p className="font-medium text-gray-700">Couldn&apos;t reach the tracker.</p>
+          <p className="mt-1">
+            The background service worker isn&apos;t responding. Try reloading the
+            extension at <span className="font-mono">chrome://extensions</span>.
+          </p>
+        </div>
+      )}
+
+      {status === 'ready' && data && (
         <div className="space-y-3">
           <TotalImpact totals={data.totals} />
           <CategoryBreakdown byCategory={data.byCategory} />

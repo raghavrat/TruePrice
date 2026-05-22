@@ -1,7 +1,7 @@
 import { domainOf } from '../lib/domain';
 import { getSettings, pruneUsage, setSettings } from '../lib/storage';
 import type { RuntimeMessage } from '../lib/types';
-import { buildSiteImpact, buildTotals } from './aggregator';
+import { buildSessionImpact, buildSiteImpact, buildTotals } from './aggregator';
 import { recordBytes } from './bytesTracker';
 import { flushActive, recordVisit, setActiveDomain, setIdle } from './historyTracker';
 import { runProfileBatch } from './profileBatcher';
@@ -14,7 +14,16 @@ const ALARMS = {
   prune: 'prune',
 } as const;
 
-const IDLE_SECONDS = 30;
+// Chrome requires the idle detection interval to be >= 15 seconds.
+const IDLE_SECONDS = 60;
+
+function setupIdleDetection(): void {
+  try {
+    chrome.idle.setDetectionInterval(Math.max(15, IDLE_SECONDS));
+  } catch (err) {
+    console.warn('[trueprice] idle detection setup failed', err);
+  }
+}
 
 async function currentActiveDomain(): Promise<string | null> {
   try {
@@ -33,13 +42,13 @@ function setupAlarms(): void {
 }
 
 chrome.runtime.onInstalled.addListener(async () => {
-  chrome.idle.setDetectionInterval(IDLE_SECONDS);
+  setupIdleDetection();
   setupAlarms();
   await setActiveDomain(await currentActiveDomain());
 });
 
 chrome.runtime.onStartup.addListener(async () => {
-  chrome.idle.setDetectionInterval(IDLE_SECONDS);
+  setupIdleDetection();
   setupAlarms();
   await setActiveDomain(await currentActiveDomain());
 });
@@ -109,9 +118,13 @@ chrome.runtime.onMessage.addListener(
         case 'GET_SITE_IMPACT':
           sendResponse(await buildSiteImpact(message.domain));
           break;
-        case 'GET_BADGE': {
+        case 'GET_SESSION_IMPACT': {
           const domain = domainOf(sender.tab?.url);
-          sendResponse(domain ? await buildSiteImpact(domain) : null);
+          sendResponse(
+            domain
+              ? await buildSessionImpact(domain, message.activeSeconds, message.bytes)
+              : null,
+          );
           break;
         }
         case 'PAGE_BYTES': {

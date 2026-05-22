@@ -82,7 +82,7 @@ export interface Settings {
 export type RuntimeMessage =
   | { type: 'GET_TOTALS'; range: TimeRange }
   | { type: 'GET_SITE_IMPACT'; domain: string }
-  | { type: 'GET_BADGE' }
+  | { type: 'GET_SESSION_IMPACT'; activeSeconds: number; bytes: number }
   | { type: 'PAGE_BYTES'; bytes: number }
   | { type: 'GET_SETTINGS' }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> };
@@ -100,5 +100,15 @@ export interface SiteImpactResponse {
   todayKwh: number;
   todayLitersWater: number;
   todayGco2: number;
+  confidence: number;
+}
+
+/** Impact for the current site over the current browsing session (badge). */
+export interface SessionImpactResponse {
+  domain: string;
+  category: Category;
+  kwh: number;
+  litersWater: number;
+  gco2: number;
   confidence: number;
 }
