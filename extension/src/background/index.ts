@@ -1,3 +1,4 @@
+import { fetchProductImpact } from '../lib/aiClient';
 import { domainOf } from '../lib/domain';
 import { getSettings, pruneUsage, setSettings } from '../lib/storage';
 import type { RuntimeMessage } from '../lib/types';
@@ -127,6 +128,14 @@ chrome.runtime.onMessage.addListener(
           );
           break;
         }
+        case 'GET_PRODUCT_IMPACT':
+          try {
+            sendResponse(await fetchProductImpact(message.title));
+          } catch (err) {
+            console.warn('[trueprice] product impact failed', err);
+            sendResponse(null);
+          }
+          break;
         case 'PAGE_BYTES': {
           const domain = domainOf(sender.tab?.url);
           if (domain) await recordBytes(domain, message.bytes);

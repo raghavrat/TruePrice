@@ -83,9 +83,33 @@ export type RuntimeMessage =
   | { type: 'GET_TOTALS'; range: TimeRange }
   | { type: 'GET_SITE_IMPACT'; domain: string }
   | { type: 'GET_SESSION_IMPACT'; activeSeconds: number; bytes: number }
+  | { type: 'GET_PRODUCT_IMPACT'; title: string }
   | { type: 'PAGE_BYTES'; bytes: number }
   | { type: 'GET_SETTINGS' }
   | { type: 'SET_SETTINGS'; settings: Partial<Settings> };
+
+export type ProductCategory =
+  | 'electronics'
+  | 'clothing'
+  | 'book'
+  | 'food'
+  | 'beauty'
+  | 'home'
+  | 'furniture'
+  | 'toy'
+  | 'tool'
+  | 'other';
+
+/** Manufacturing/shipping footprint of a physical product (Amazon overlay). */
+export interface ProductImpact {
+  title: string;
+  category: ProductCategory;
+  co2Kg: number;
+  waterL: number;
+  energyKwh: number;
+  confidence: number;
+  source: 'ai' | 'fallback';
+}
 
 export interface TotalsResponse {
   range: TimeRange;

@@ -28,6 +28,13 @@ export function formatCo2(grams: number): string {
   return `${(grams / 1000).toFixed(grams < 10_000 ? 2 : 1)} kg`;
 }
 
+/** Format a CO₂ figure given in kilograms (product footprints). */
+export function formatCo2Kg(kg: number): string {
+  if (kg < 1) return `${Math.round(kg * 1000)} g`;
+  if (kg < 1000) return `${kg.toFixed(kg < 10 ? 1 : 0)} kg`;
+  return `${(kg / 1000).toFixed(1)} t`;
+}
+
 export function formatLand(m2: number): string {
   if (m2 < 1) return `${(m2 * 10_000).toFixed(0)} cm²`;
   return `${m2.toFixed(2)} m²`;

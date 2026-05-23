@@ -28,6 +28,29 @@ create policy "domain_profiles_read"
   using (true);
 
 -- =====================================================================
+-- Global product footprint cache (Amazon overlay). Shared across users.
+-- Written only by the /api/ai/product route via the service role.
+-- =====================================================================
+create table if not exists public.product_profiles (
+  title_hash  text primary key,
+  title       text not null,
+  category    text not null default 'other',
+  co2_kg      double precision not null default 0,
+  water_l     double precision not null default 0,
+  energy_kwh  double precision not null default 0,
+  confidence  double precision not null default 0.5,
+  source      text not null default 'ai',
+  created_at  timestamptz not null default now()
+);
+
+alter table public.product_profiles enable row level security;
+
+drop policy if exists "product_profiles_read" on public.product_profiles;
+create policy "product_profiles_read"
+  on public.product_profiles for select
+  using (true);
+
+-- =====================================================================
 -- Per-user, per-day, per-category aggregates (cloud sync).
 -- =====================================================================
 create table if not exists public.daily_aggregates (

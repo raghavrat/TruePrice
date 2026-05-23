@@ -32,6 +32,17 @@ export default defineManifest({
       js: ['src/content/index.ts'],
       run_at: 'document_idle',
     },
+    {
+      matches: [
+        '*://*.amazon.com/*',
+        '*://*.amazon.co.uk/*',
+        '*://*.amazon.ca/*',
+        '*://*.amazon.de/*',
+        '*://*.amazon.in/*',
+      ],
+      js: ['src/content/amazon.ts'],
+      run_at: 'document_idle',
+    },
   ],
   permissions: ['history', 'tabs', 'idle', 'storage', 'alarms'],
   host_permissions: ['<all_urls>'],
